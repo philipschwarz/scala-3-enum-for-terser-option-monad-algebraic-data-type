@@ -87,7 +87,8 @@ import scala.util.Try
   assert(greet(None,            Some(Earthling("Fred", "Smith", English, Italian)), Some(Scala3)) == None)
   assert(greet(Some(Welcome),   None,                                               Some(Scala3)) == None)
   assert(greet(Some(Welcome),   Some(Earthling("Fred", "Smith", English,Italian)),  None)         == None)
-
+  
+  // same again but this time using Cats-style 'some' and 'none' methods for convenience
   assert(greet(Welcome.some,    Earthling("Fred", "Smith", English, Italian).some, Scala3.some) == ("Welcome to Scala3 Fred!").some)
   assert(greet(Benvenuto.some,  Earthling("Fred", "Smith", English, Italian).some, Scala3.some) == ("Benvenuto a Scala3 Fred!").some)
   assert(greet(Bienvenue.some,  Earthling("Fred", "Smith", English, Italian).some, Scala3.some) == none)
