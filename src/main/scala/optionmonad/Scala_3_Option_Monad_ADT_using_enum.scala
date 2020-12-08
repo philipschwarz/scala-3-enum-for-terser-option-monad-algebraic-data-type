@@ -12,26 +12,26 @@ enum Option[+A]:
     this match
       case Some(a) => Some(f(a))
       case None => None
-  
+
   def flatMap[B](f: A => Option[B]): Option[B] =
     this match
       case Some(a) => f(a)
       case None => None
-      
+
   def fold[B](ifEmpty: => B)(f: A => B) =
     this match
       case Some(a) => f(a)
       case None => ifEmpty
-      
+
   def filter(p: A => Boolean): Option[A] =
     this match
       case Some(a) if p(a) => Some(a)
       case _ => None
-      
+
   def withFilter(p: A => Boolean): Option[A] =
     filter(p)
-      
-object Option: 
+
+object Option:
   def pure[A](a: A):Option[A] = Some(a)
   def none: Option[Nothing] = None
 
@@ -42,7 +42,7 @@ enum Language(val toPreposition: String):
   case English extends Language("to")
   case German  extends Language("nach")
   case French  extends Language("à")
-  case Spanish extends Language("a") 
+  case Spanish extends Language("a")
   case Italian extends Language("a")
 
 import Language._
@@ -52,18 +52,18 @@ enum Greeting(val language: Language):
   case Willkommen extends Greeting(German)
   case Bienvenue extends Greeting(French)
   case Bienvenido extends Greeting(Spanish)
-  case Benvenuto extends Greeting(Italian)  
+  case Benvenuto extends Greeting(Italian)
 
 enum Planet:
   case Mercury, Venus, Earth, Mars, Jupiter, Saturn, Neptune, Uranus, Pluto, Scala3
 
-case class Earthling(name: String, surname: String, languages: Language*) 
+case class Earthling(name: String, surname: String, languages: Language*)
 
 import optionmonad.Option.{Some,None}, optionmonad.Option._, optionmonad.Planet._, optionmonad.Greeting._
 
-def greet(maybeGreeting: Option[Greeting], maybeEarthling: Option[Earthling], maybePlanet: Option[Planet]): Option[String] = 
+def greet(maybeGreeting: Option[Greeting], maybeEarthling: Option[Earthling], maybePlanet: Option[Planet]): Option[String] =
   for
-    greeting   <- maybeGreeting 
+    greeting   <- maybeGreeting
     earthling  <- maybeEarthling
     planet     <- maybePlanet
     if earthling.languages contains greeting.language
@@ -73,13 +73,13 @@ import scala.util.Try
 
 @main def main =
 
-  val maybeGreeting = 
+  val maybeGreeting =
     greet(  maybeGreeting = Some(Welcome),
            maybeEarthling = Some(Earthling("Fred", "Smith", English, Italian)),
               maybePlanet = Some(Scala3))
-  
+
   println(maybeGreeting.fold("Error: no greeting message available")(message => s"*** $message ***"))
-  
+
   //     Greeting               Earthling                                           Planet
   assert(greet(Some(Welcome),   Some(Earthling("Fred", "Smith", English, Italian)), Some(Scala3)) == Some("Welcome to Scala3 Fred!"))
   assert(greet(Some(Benvenuto), Some(Earthling("Fred", "Smith", English, Italian)), Some(Scala3)) == Some("Benvenuto a Scala3 Fred!"))
@@ -87,7 +87,7 @@ import scala.util.Try
   assert(greet(None,            Some(Earthling("Fred", "Smith", English, Italian)), Some(Scala3)) == None)
   assert(greet(Some(Welcome),   None,                                               Some(Scala3)) == None)
   assert(greet(Some(Welcome),   Some(Earthling("Fred", "Smith", English,Italian)),  None)         == None)
-  
+
   // same again but this time using Cats-style 'some' and 'none' methods for convenience
   assert(greet(Welcome.some,    Earthling("Fred", "Smith", English, Italian).some, Scala3.some) == ("Welcome to Scala3 Fred!").some)
   assert(greet(Benvenuto.some,  Earthling("Fred", "Smith", English, Italian).some, Scala3.some) == ("Benvenuto a Scala3 Fred!").some)
@@ -100,12 +100,12 @@ import scala.util.Try
     s => Try { s.toInt }.fold(_ => None, Some(_))
   assert( stringToInt("123") == Some(123) )
   assert( stringToInt("1x3") == None )
-  
+
   val intToChars: Int => Option[List[Char]] =
     n => if n < 0 then None else Some(n.toString.toArray.toList)
-    
-  assert(intToChars(123) == Some(List('1', '2', '3')))  
-  assert(intToChars(0) == Some(List('0')))  
+
+  assert(intToChars(123) == Some(List('1', '2', '3')))
+  assert(intToChars(0) == Some(List('0')))
   assert(intToChars(-10) == None)
 
   import scala.util.{Failure, Success, Try}
@@ -113,17 +113,17 @@ import scala.util.Try
     chars => Try { chars.foldLeft(0){(n,char) => 10 * n + char.toString.toInt} }.fold(_ => None, Some(_))
 
   assert(charsToInt(List('1', '2', '3')) == Some(123) )
-  assert(charsToInt(List('1', 'x', '3')) == None )  
-  
+  assert(charsToInt(List('1', 'x', '3')) == None )
+
   def doublePalindrome(s: String): Option[String] =
     for
       n <- stringToInt(s)
       chars <- intToChars(2 * n)
-      palindrome <- charsToInt(chars ++ chars.reverse) 
+      palindrome <- charsToInt(chars ++ chars.reverse)
     yield palindrome.toString
   assert( doublePalindrome("123") == Some("246642") )
   assert( doublePalindrome("1x3") == None )
-  
+
   // plain function composition
   extension[A,B,C](f: B => C)
     def ∘ (g: A => B): A => C =
@@ -139,24 +139,24 @@ import scala.util.Try
     val g = double
     val h = square
     val a = "123"
-    
+
     // identity law: ma map id = ma
     assert( (f(a) map identity) == f(a) )
     assert( (a.some map identity) == identity(a.some) )
-    assert( (none map identity) == identity(none) )    
+    assert( (none map identity) == identity(none) )
     // composition law: ma map (g ∘ h) == ma map h map g
     assert( (f(a) map (g ∘ h)) == (f(a) map h map g) )
     assert( (3.some map (g ∘ h)) == (3.some map h map g) )
     assert( (none map (g ∘ h)) == (none map h map g) )
   }  
-  
+
   // Haskell-style >>= (bind) alias for flatMap
-  extension[A,B](oa: Option[A]):
+  extension[A,B](oa: Option[A])
     def >>= (f: A => Option[B]): Option[B] = 
       oa flatMap f
-      
+
   // Kleisli arrow composition operator, AKA the fish operator
-  extension[A,B,C](f: A => Option[B]):
+  extension[A,B,C](f: A => Option[B])
     def >=> (g: B => Option[C]): A => Option[C] =
       a => f(a) >>= g
 
@@ -172,7 +172,7 @@ import scala.util.Try
     /********************************************
      * Monad laws expressed in terms of flatMap *
      ********************************************/
-    
+
     // left identity law: pure(a) flatMap f == f(a)
     assert((pure(a) flatMap f) == f(a))
     // right identity law: ma flatMap pure == ma
@@ -187,7 +187,7 @@ import scala.util.Try
     /**************************************************************************
      * Monad laws expressed in terms of bind operator >>= (alias for flatMap) *
      **************************************************************************/
-    
+
     // left identity law: pure(a) flatMap f == f(a)
     assert((pure(a) >>= f) == f(a))
     // right identity law: ma flatMap pure == ma
@@ -202,7 +202,7 @@ import scala.util.Try
     /****************************************************************************
      * Monad laws expressed in terms of fish operator >=> (Kleisli composition) *
      ****************************************************************************/
-    
+
     // left identity law: pure >=> f == f
     assert( (pure[String] >=> f)(a) == f(a) )
     // right identity law: f >=> pure == f
